@@ -25,9 +25,14 @@ def test_grouping_and_owner():
     parcels = {"2614 MONTANA AVE": {"parcel": "2090003024300", "owner_name": "SMITH JOHN", "mailing_name": "",
                                     "mailing_address": "9 ELM ST, DALLAS TX 75201", "mailing_csz": "DALLAS TX 75201",
                                     "market_value": 60000, "land_use": "510", "exlucode": "SF",
-                                    "in_foreclosure": False, "delinquent_taxes": 1200.0, "has_mortgage_bank": False}}
+                                    "in_foreclosure": False, "delinquent_taxes": 1200.0, "has_mortgage_bank": False, "homestead": False, "rental_registered": False}}
     leads = L.build_leads(sigs, parcels, dt.date(2026, 11, 10))
     assert len(leads) == 1
     l = leads[0]
     assert l["open_records"] == 2 and l["lead_types"][0] == "Vacant / barricaded building"
     assert l["out_of_state_owner"] and l["parcel"] == "2090003024300" and l["score"] >= 80
+
+
+def test_cagis_suffix_codes():
+    from addr import normalize_address
+    assert normalize_address("1250 OBERLIN BV") == normalize_address("1250 OBERLIN BLVD")

@@ -46,8 +46,10 @@ STAGE_BONUSES = [  # (label, words in status, points) - highest first, only one 
     ("owner billed for city cleanup", ["owner billed", "billed for cleaning", "cleaned by dept"], 10),
     ("orders / final notice issued", ["orders issued", "final notice", "notice", "reissue"], 8),
 ]
-CITY_NAMES = {"CINC": "CINCINNATI", "NORW": "NORWOOD", "FRST": "FOREST PARK", "FPRK": "FOREST PARK",
-              "SYCA": "SYCAMORE TWP", "SYCT": "SYCAMORE TWP", "BLUA": "BLUE ASH", "BASH": "BLUE ASH"}
+CITY_NAMES = {"CINC": "CINCINNATI", "NOR": "NORWOOD", "NORW": "NORWOOD", "FRST": "FOREST PARK",
+              "GREE": "GREEN TWP", "BLUE": "BLUE ASH", "MIAM": "MIAMI TWP", "SYCM": "SYCAMORE TWP",
+              "SPRF": "SPRINGFIELD TWP", "ANDE": "ANDERSON TWP", "COLE": "COLERAIN TWP", "COLU": "COLUMBIA TWP",
+              "HART": "HARRISON TWP"}
 INSTITUTIONAL_WORDS = ["BANK", "MORTGAGE", "FEDERAL NATIONAL", "FANNIE", "FREDDIE", "HOUSING AUTHORITY",
                        "LAND REUTILIZATION", "LANDBANK", "LAND BANK", "PORT AUTHORITY", "CITY OF", "VILLAGE OF",
                        "BOARD OF", "HAMILTON COUNTY", "STATE OF OHIO", "SECRETARY OF HOUSING", "TOWNSHIP"]

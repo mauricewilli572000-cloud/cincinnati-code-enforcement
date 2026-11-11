@@ -14,6 +14,9 @@ SUFFIXES = {
     "CROSSING": "XING", "EXPRESSWAY": "EXPY", "FREEWAY": "FWY", "PIKE": "PIKE",
     "RUN": "RUN", "WAY": "WAY", "COVE": "CV", "LOOP": "LOOP", "PATH": "PATH",
     "POINTE": "PT", "GROVE": "GRV", "HEIGHTS": "HTS", "MANOR": "MNR",
+    # short codes used in county parcel files (CAGIS)
+    "BV": "BLVD", "PW": "PKWY", "PY": "PKWY", "HW": "HWY", "LA": "LN", "TE": "TER", "WY": "WAY", "CI": "CIR",
+    "CR": "CIR", "PK": "PIKE", "SQUARE": "SQ", "TRACE": "TRCE", "XG": "XING", "ROW": "ROW",
 }
 DIRECTIONS = {
     "NORTH": "N", "SOUTH": "S", "EAST": "E", "WEST": "W",
