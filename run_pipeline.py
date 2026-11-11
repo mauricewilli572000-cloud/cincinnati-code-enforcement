@@ -101,7 +101,24 @@ def main(argv=None) -> int:
 
     url = sources.find_cagis_url(today)
     path = sources.download_cagis(config.RAW_DIR, url)
-    parcels = sources.read_cagis(path, wanted)
+    parcels, _ = sources.read_cagis(path, wanted)
+    log.info("CAGIS by address: owners found for %d of %d properties", len(parcels), len(wanted))
+
+    # Truncated / unmatched case addresses: find the parcel at the case's map point instead.
+    points = {}
+    for s in signals:
+        if s["key"] not in parcels and s["lat"] and s["lon"] and s["key"] not in points:
+            points[s["key"]] = (s["lat"], s["lon"])
+    cache = json.loads(config.POINT_CACHE_JSON.read_text()) if config.POINT_CACHE_JSON.exists() else {}
+    located = sources.parcel_at_points(points, cache, config.PARCEL_MAP_MAX_PER_RUN)
+    config.POINT_CACHE_JSON.parent.mkdir(parents=True, exist_ok=True)
+    config.POINT_CACHE_JSON.write_text(json.dumps(cache, separators=(",", ":")), encoding="utf-8")
+    if located:
+        _, by_parcel = sources.read_cagis(path, set(), {sources.pid_key(v) for v in located.values()})
+        for key, pid in located.items():
+            info = by_parcel.get(sources.pid_key(pid))
+            if info:
+                parcels[key] = {**info, "matched_by": "map point"}
     log.info("CAGIS: owners found for %d of %d properties", len(parcels), len(wanted))
 
     leads = L.build_leads(signals, parcels, today)

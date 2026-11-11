@@ -22,6 +22,11 @@ STRONG_CLOSED_STATUSES = [
 STRONG_CLOSED_DAYS = 365
 
 CAGIS_FOLDER = "https://cagis.org/Opendata/Quarterly_GIS_Data/"
+# County parcel map: which parcel a case's map point falls in (for truncated case addresses)
+PARCEL_MAP_QUERY = ("https://cagisonline.hamilton-co.org/arcgis/rest/services/COUNTYWIDE/"
+                    "AuditorParcelInformation/MapServer/0/query")
+PARCEL_MAP_MAX_PER_RUN = 9000
+PARCEL_MAP_DELAY = 0.15
 CASE_URL = "https://cagismaps.hamilton-co.org/PropertyActivity/CagisReport?APD={case}"
 
 # Case categories: (label, base score, match words in comp_type_desc / sub_type_desc). First match wins.
@@ -61,6 +66,7 @@ DATA_DIR = ROOT / "data"
 DOCS_DIR = ROOT / "docs"
 HISTORY_JSON = DATA_DIR / "history.json"
 STATE_JSON = DATA_DIR / "state.json"
+POINT_CACHE_JSON = DATA_DIR / "point_parcel_cache.json"
 GHL_CSV = DATA_DIR / "ghl_cincinnati_code_enforcement.csv"
 DOCS_CSV = DOCS_DIR / "ghl_cincinnati_code_enforcement.csv"
 DASHBOARD_JSON = DOCS_DIR / "cincinnati_code_enforcement.json"

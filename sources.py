@@ -125,9 +125,16 @@ def _g(row, k) -> str:
     return re.sub(r"\s+", " ", str(row.get(k) or "")).strip()
 
 
-def read_cagis(path: Path, wanted_keys: set[str]) -> dict[str, dict]:
-    """{normalized address: best parcel info} for addresses we have cases on."""
+def pid_key(v) -> str:
+    return re.sub(r"\D", "", str(v or "")).lstrip("0")
+
+
+def read_cagis(path: Path, wanted_keys: set[str], wanted_parcels: set[str] | None = None
+               ) -> tuple[dict[str, dict], dict[str, dict]]:
+    """({normalized address: best parcel info}, {parcel id: info}) for the addresses / parcels we want."""
+    wanted_parcels = wanted_parcels or set()
     best: dict[str, tuple[float, dict]] = {}
+    by_parcel: dict[str, dict] = {}
     with path.open(encoding="latin-1", newline="") as f:
         for row in csv.DictReader(f):
             no, st, sf, dr = _g(row, "ADDRNO"), _g(row, "ADDRST"), _g(row, "ADDRSF"), _g(row, "LOC_ST_DIR")
@@ -135,7 +142,8 @@ def read_cagis(path: Path, wanted_keys: set[str]) -> dict[str, dict]:
             keys = {normalize_address(" ".join(p for p in (no, st, sf) if p)),
                     normalize_address(" ".join(p for p in (no, dr, st, sf) if p))}
             keys = {k for k in keys if k and k in wanted_keys}
-            if not keys:
+            pk = pid_key(_g(row, "PARCELID"))
+            if not keys and pk not in wanted_parcels:
                 continue
             impr = _num(row.get("MKTIMP"))
             rank = (1 if _g(row, "MLTOWN") in ("0", "00", "") else 0) * 1e12 + impr
@@ -164,7 +172,39 @@ def read_cagis(path: Path, wanted_keys: set[str]) -> dict[str, dict]:
                 "rental_registered": _g(row, "RENT_REG_FLAG").upper() in ("Y", "YES", "1", "T"),
                 "has_mortgage_bank": bool(_g(row, "BANKCD").strip("0")),
             }
+            info["address"] = " ".join(p for p in (no, dr, st, sf) if p)
+            if pk in wanted_parcels and (pk not in by_parcel or rank > by_parcel[pk]["_rank"]):
+                by_parcel[pk] = {**info, "_rank": rank}
             for key in keys:
                 if key not in best or rank > best[key][0]:
                     best[key] = (rank, info)
-    return {k: v for k, (_, v) in best.items()}
+    return {k: v for k, (_, v) in best.items()}, by_parcel
+
+
+def parcel_at_points(points: dict[str, tuple[float, float]], cache: dict, max_queries: int) -> dict[str, str]:
+    """{key: parcel id} by asking the county parcel map which parcel each case point falls in.
+
+    Used for case addresses the city truncated ('43 OBERLIN BLVD'). Cached by point, forever.
+    """
+    out, done = {}, 0
+    for key, (lat, lon) in points.items():
+        pt = f"{lat:.6f},{lon:.6f}"
+        if pt not in cache:
+            if done >= max_queries:
+                continue
+            done += 1
+            try:
+                r = S.get(config.PARCEL_MAP_QUERY, timeout=60, params={
+                    "geometry": f"{lon},{lat}", "geometryType": "esriGeometryPoint", "inSR": 4326,
+                    "spatialRel": "esriSpatialRelIntersects", "outFields": "PARCELID",
+                    "returnGeometry": "false", "f": "json"})
+                feats = r.json().get("features", [])
+                cache[pt] = feats[0]["attributes"]["PARCELID"] if feats else ""
+            except Exception as e:  # noqa: BLE001 - try again next run
+                log.debug("point lookup failed %s: %s", pt, e)
+                continue
+            time.sleep(config.PARCEL_MAP_DELAY)
+        if cache.get(pt):
+            out[key] = cache[pt]
+    log.info("Parcel map: %d new lookups, %d properties located by point", done, len(out))
+    return out

@@ -29,6 +29,13 @@ def _days(iso: str, today: dt.date) -> int:
         return 0
 
 
+def _f(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def to_signals(cases: list[dict]) -> list[dict]:
     out = []
     for c in cases:
@@ -43,6 +50,7 @@ def to_signals(cases: list[dict]) -> list[dict]:
             "date": (c.get("entered_date") or "")[:10], "updated": (c.get("last_updated") or "")[:10],
             "city": config.CITY_NAMES.get(c.get("city_id", ""), c.get("city_id", "")),
             "neighborhood": (c.get("neighborhood") or "").title(),
+            "lat": _f(c.get("latitude")), "lon": _f(c.get("longitude")),
         })
     return out
 
@@ -96,7 +104,9 @@ def build_leads(signals: list[dict], parcels: dict[str, dict], today: dt.date) -
         head = sigs[0]
         leads.append({
             "lead_id": hashlib.sha1(key.encode()).hexdigest()[:12],
-            "property_address": head["address"],
+            "property_address": (p["address"] if p and p.get("matched_by") == "map point" and p.get("address")
+                                 else head["address"]),
+            "case_address": head["address"],
             "city": next((s["city"] for s in sigs if s["city"]), "CINCINNATI"),
             "state": config.STATE,
             "zip": "",
