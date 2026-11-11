@@ -1,0 +1,36 @@
+name: Cincinnati code enforcement leads
+
+on:
+  schedule:
+    - cron: "33 10 * * *"   # ~5:33 AM Eastern; the city's open data refreshes daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cincinnati-code-enforcement
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest -q tests
+      - name: Run pipeline
+        run: python run_pipeline.py
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ docs/
+          git diff --cached --quiet || git commit -m "Cincinnati code enforcement: $(date -u +%Y-%m-%d)"
+          git pull --rebase && git push
